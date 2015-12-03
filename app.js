@@ -5,6 +5,7 @@ var bodyParser = require('body-parser');
 
 var express = require('express');
 var app = express();
+var rooms=[];
 
 // Set the views directory
 app.set('views', __dirname + '/views');
@@ -23,7 +24,7 @@ fs.readdirSync('./routes').forEach(function (file){
   // There might be non-js files in the directory that should not be loaded
   if (path.extname(file) == '.js') {
     console.log("Adding routes in "+file);
-  	require('./routes/'+ file).init(app);
+  	require('./routes/'+ file).init(app,rooms);
   	}
 });
 
@@ -38,13 +39,9 @@ app.use(function(req, res) {
 });
 
 var httpServer = require('http').createServer(app);
-var io = require('socket.io')(httpServer);
-io.on('connection', function(socket){
-  console.log('a user connected');
-  socket.on('disconnect', function(){
-    console.log('user disconnected');
-  });
-});
+var io = require('socket.io').listen(httpServer);
+require('./socket/socket.js')(io,rooms);
+
 
 
 /*
