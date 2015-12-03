@@ -11,7 +11,7 @@ index = function(req, res) {
 
 room=function(req, res, next){
 	var roomName = findRoomName(req.params.id)
-	res.render('room',{user:req.user, roomNumber:req.params.id, roomName:roomName})
+	res.render('room',{roomNumber:req.params.id, roomName:roomName})
 }
 
 function findRoomName(roomId){

@@ -5,14 +5,14 @@
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
 <script src="https://cdn.socket.io/socket.io-1.3.7.js"></script>
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
-<style src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css"></style>
-
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
   </head>
   <body>
     <input id="roomname" type="text" class="form-control" placeholder="Room Name" aria-describedby="basic-addon1">
   <button id="addroom"type="button" class="btn btn-primary">Add Room</button>
   <ul id="roomList">
   </ul>
+
 
 
 <script>
@@ -25,12 +25,13 @@
     var roomName=$("#roomname").val();
     if(roomName!=''){
       var roomNumber= parseInt(Math.random()*10000);
-      socket.emit('newRoom',{roomName:roomName, roomNumber:roomNumber});
+      socket.emit('newRoom',{roomName:roomName, roomNumber:roomNumber, playerNumber:0});
       $("#roomname").val('');
     }
   });
 
   socket.on("roomUpdate",function(data){
+    $("#roomList").html("");
     var procData=JSON.parse(data);
     for (var i =0;i<procData.length;i++){
       var str='<a href=room/'+procData[i].roomNumber +'><li>' +procData[i].roomName +'</li></a>'
