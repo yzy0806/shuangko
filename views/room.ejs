@@ -12,22 +12,45 @@
 
   <input id="playerName" type="text" class="form-control" placeholder="Add a Player Name " aria-describedby="basic-addon1">
 
-<select class="form-control">
-    <option value="one">Team 1</option>
-    <option value="two">Team 2</option>
+<select class="form-control" id="team">
+    <option value="team1">Team 1</option>
+    <option value="team2">Team 2</option>
 </select>
 
   <button id="addPlayer"type="button" class="btn btn-primary">Add Player</button>
 
-<p><%=roomNumber%></p>
+<p><%=room%></p>
 <script>
 $(function() {
   var host ="http://localhost:50000";
+  var roomlist = io.connect(host+"/roomlist");
   var games = io.connect(host +"/games");
-  var roomNumber= <%=roomNumber%>;
+  roomlist.on("playerUpdate",function(data){
+    $("#roomList").html("");
+    var procData=JSON.parse(data);
+    for (var i =0;i<procData.length;i++){
+      var str='<a href=room/'+procData[i].roomNumber +'><li>' +procData[i].roomName + procData[i].playerList.length+'</li></a>'
+      $("#roomList").prepend(str);
+    }
+  })
+
+  var room =<%-JSON.stringify(room)%>
+  var roomNumber=room.roomNumber;
+
+
+  $("#addPlayer").click(function(){
+    var playerName=$("#playerName").val();
+    var teamNumber = $('#team').find(":selected").val();
+    var player={};
+    player.name=playerName;
+    player.team=teamNumber;
+    if(playerName!=''){
+      roomlist.emit('addPlayer',{roomNumber:roomNumber, player:player});
+      $("#playerName").val('');
+    }
+  });
 
   games.on("connect", function(){
-    console.log("game connect "+roomNumber);
     games.emit('joinRoom', {roomNumber:roomNumber});
   })
 })

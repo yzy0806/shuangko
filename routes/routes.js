@@ -10,15 +10,15 @@ index = function(req, res) {
 };
 
 room=function(req, res, next){
-	var roomName = findRoomName(req.params.id)
-	res.render('room',{roomNumber:req.params.id, roomName:roomName})
+	var room = findRoom(req.params.id);
+	console.log(room);
+	res.render('room',{room:room});
 }
 
-function findRoomName(roomId){
-	  console.log(rooms);
+function findRoom(roomId){
 	for(var i=0;i<rooms.length;i++){
 		if(rooms[i].roomNumber==roomId){
-			return rooms[i].roomName;
+			return rooms[i];
 		}
 	}
 }

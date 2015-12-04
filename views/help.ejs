@@ -17,16 +17,15 @@
 
 <script>
   var socket = io.connect("http://localhost:50000/roomlist");
-  socket.on("connect",function(){
-    console.log("connection est");
-  })
+  socket.on("connect",function(){});
 
   $("#addroom").click(function(){
     var roomName=$("#roomname").val();
     if(roomName!=''){
-      var roomNumber= parseInt(Math.random()*10000);
-      socket.emit('newRoom',{roomName:roomName, roomNumber:roomNumber, playerNumber:0});
-      $("#roomname").val('');
+      var roomNumber= parseInt(Math.random()*1000000);
+      var playerList=[];
+      var teams = {team1:[],team2:[]};
+      socket.emit('newRoom',{roomName:roomName, roomNumber:roomNumber, playerList:playerList,teams:teams});
     }
   });
 
@@ -34,7 +33,7 @@
     $("#roomList").html("");
     var procData=JSON.parse(data);
     for (var i =0;i<procData.length;i++){
-      var str='<a href=room/'+procData[i].roomNumber +'><li>' +procData[i].roomName +'</li></a>'
+      var str='<a href=room/'+procData[i].roomNumber +'><li>' +procData[i].roomName + procData[i].playerList.length+'</li></a>'
       $("#roomList").prepend(str);
     }
   })
