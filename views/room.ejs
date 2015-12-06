@@ -46,13 +46,17 @@ $(function() {
     player.team=teamNumber;
     if(playerName!=''){
       roomlist.emit('addPlayer',{roomNumber:roomNumber, player:player});
+      games.emit('joinRoom', {roomNumber:roomNumber, player:player});
       $("#playerName").val('');
     }
   });
 
   games.on("connect", function(){
-    games.emit('joinRoom', {roomNumber:roomNumber});
   })
+
+  setInterval(function(){
+    games.emit('updateList',{roomNumber:roomNumber});
+  }, 5000);
 })
 </script>
   </body>

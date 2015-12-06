@@ -11,7 +11,6 @@ index = function(req, res) {
 
 room=function(req, res, next){
 	var room = findRoom(req.params.id);
-	console.log(room);
 	res.render('room',{room:room});
 }
 
