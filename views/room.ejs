@@ -45,12 +45,15 @@ $(function() {
     player.name=playerName;
     player.team=teamNumber;
     if(playerName!=''){
-      roomlist.emit('addPlayer',{roomNumber:roomNumber, player:player});
       games.emit('joinRoom', {roomNumber:roomNumber, player:player});
       $("#playerName").val('');
     }
   });
 
+  games.on("updateClientList",function(data){
+    roomlist.emit('updatePlayer',{roomNumber:roomNumber, playerList:data});
+    console.log(data);
+  })
   games.on("connect", function(){
   })
 

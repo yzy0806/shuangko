@@ -6,6 +6,7 @@ var bodyParser = require('body-parser');
 var express = require('express');
 var app = express();
 var rooms=[];
+var users={};
 
 // Set the views directory
 app.set('views', __dirname + '/views');
@@ -40,7 +41,7 @@ app.use(function(req, res) {
 
 var httpServer = require('http').createServer(app);
 var io = require('socket.io').listen(httpServer);
-require('./socket/socket.js')(io,rooms);
+require('./socket/socket.js')(io,rooms,users);
 
 
 

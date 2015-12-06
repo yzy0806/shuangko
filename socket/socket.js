@@ -1,4 +1,4 @@
-module.exports=function(io,rooms){
+module.exports=function(io,rooms,users){
 
 	function findRoom(roomId){
 	for(var i=0;i<rooms.length;i++){
@@ -8,7 +8,6 @@ module.exports=function(io,rooms){
 		}
 	}
 
-
 	var gamerooms=io.of('/roomlist').on('connection',function(socket){
 		socket.emit('roomUpdate',JSON.stringify(rooms));
 		socket.on("newRoom", function(data){
@@ -17,54 +16,48 @@ module.exports=function(io,rooms){
 			socket.emit('roomUpdate',JSON.stringify(rooms));
 		})
 
-		socket.on("addPlayer",function(data){
+		socket.on("updatePlayer",function(data){
 			var room =findRoom(data.roomNumber);
-			room.playerList.push(data.player);
-			room.teams[data.player.team].push(data.player.name);
+			room.playerList=data.playerList;
 			socket.broadcast.emit('roomUpdate',JSON.stringify(rooms));
 			socket.emit('roomUpdate',JSON.stringify(rooms));
-
 		})
+
 	})
 
 	var games = io.of('/games').on('connection',function(socket){
-		console.log('games connection server');
-
-		var users={}
-
 		socket.on('joinRoom',function(data){
+			socket.join(data.roomNumber);
 			var user={};
 			user.id=socket.id;
 			user.player=data.player;
-			if(users[data.roomNumber]!==undefined){
-				users[data.roomNumber].push(user);
+			var index=data.roomNumber;
+			if(users[index]!==undefined){
+				users[index].push(user);
 			}
 			else{
-				users[data.roomNumber]=[];
-				users[data.roomNumber].push(user);
+				users[index]=[];
+				users[index].push(user);
 			}
-			console.log(users);
-			socket.join(data.roomNumber);
 		});
-
 
 		function UpdateUserList(room){
 			var clients =io.nsps['/games'].adapter.rooms[room];
 			if(clients!==undefined){
-			clients=JSON.stringify(clients).getOwnPropertyNames();
-			console.log(clients);
+			clients=Object.getOwnPropertyNames(clients);
 			var clientList=[];
-			for (client in clients){
-				for (user in users[room]){
-					if(client===user.id){
-						clientList.push(client);
+			var index=room+"";
+			var roomMember=users[index];
+			for (var i in clients){
+				for (var k in roomMember){
+					if(clients[i]===roomMember[k].id){
+						clientList.push(roomMember[k]);
 					}
 				}
 			}
-			users[room]=clientList;
-			socket.to(room).emit(clientList);
+			users[index]=clientList;
+			socket.emit('updateClientList',users[index]);
 			}
-			
 		}
 
 		socket.on('updateList',function(data){
