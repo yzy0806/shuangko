@@ -41,6 +41,34 @@ module.exports=function(io,rooms,users){
 			}
 		});
 
+		socket.on('startGame',function(data){
+			//14 =A, 15=2, 16=smallJoker, 17=largeJoker
+			var cards=[];
+			for(var i=3;i<16;i++){
+				for(var k=0;k<4;k++){
+					var c1= i+String.fromCharCode(65+k);
+					var c2= i+String.fromCharCode(65+k);
+					cards.push(c1);
+					cards.push(c2);
+				}
+			}
+			cards.push('16');
+			cards.push('16');
+			cards.push('17');
+			cards.push('17');
+			console.log(cards);
+
+			//cards=shuffle(cards);
+			for (var i=0;i<4;i++){
+				var hand =cards.slice(i, (i+1)*27);
+				hand = hand.sort(function (a, b) { 
+    				return parseInt(a.slice(0, -1), 10)-parseInt(b.slice(0, -1), 10);
+				});
+				io.to(data[i].id).emit('initiateHand', hand);
+			}; 
+
+		})
+
 		function UpdateUserList(room){
 			var clients =io.nsps['/games'].adapter.rooms[room];
 			if(clients!==undefined){

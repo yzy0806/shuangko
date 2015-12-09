@@ -18,6 +18,7 @@
 </select>
 
   <button id="addPlayer"type="button" class="btn btn-primary">Add Player</button>
+  <button id="startGame"type="button" class="btn btn-primary">StartGame</button>
 
 <p><%=room%></p>
 <script>
@@ -50,12 +51,21 @@ $(function() {
     }
   });
 
+  $("#startGame").click(function(){
+    var playerList= JSON.parse(localStorage.getItem("playerList"));
+    console.log(playerList);
+      if(playerList.length==4){
+        console.log('emitted');
+        games.emit('startGame',{roomNumber:roomNumber,playerList:playerList});
+      }
+  });
+
   games.on("updateClientList",function(data){
     roomlist.emit('updatePlayer',{roomNumber:roomNumber, playerList:data});
+    localStorage.setItem("playerList", JSON.stringify(data));
     console.log(data);
   })
-  games.on("connect", function(){
-  })
+
 
   setInterval(function(){
     games.emit('updateList',{roomNumber:roomNumber});
