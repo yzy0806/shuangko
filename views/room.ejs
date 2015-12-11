@@ -21,7 +21,16 @@
 
   <button id="addPlayer"type="button" class="btn btn-primary">Add Player</button>
   <button id="startGame"type="button" class="btn btn-primary">StartGame</button>
+  <button id="sendCards"type="button" class="btn btn-primary">Send Cards</button>
 
+  <table>
+    <tr id="playerInfo">
+    <th>PlayerName</th>
+    <th>Teams</th>
+    <th>Remaining Cards</th>
+    <th>Current</th>
+    </tr>
+  </table>
   <div id="hand" class="row">
   </div>
 <p id="checked"></p>
@@ -29,6 +38,7 @@
 
 <script>
 $(function() {
+  var selectedCard;
   var host ="http://localhost:50000";
   var roomlist = io.connect(host+"/roomlist");
   var games = io.connect(host +"/games");
@@ -42,9 +52,12 @@ $(function() {
     }
   })
 
+  games.on('connect', function(socket){
+        localStorage.setItem("id", JSON.stringify(io().id));
+  });
+
   var room =<%-JSON.stringify(room)%>
   var roomNumber=room.roomNumber;
-
 
   $("#addPlayer").click(function(){
     var playerName=$("#playerName").val();
@@ -60,31 +73,45 @@ $(function() {
 
   $("#startGame").click(function(){
     var playerList= JSON.parse(localStorage.getItem("playerList"));
-      if(playerList.length==4){
+    if(playerList.length==4){
         games.emit('startGame',{roomNumber:roomNumber,playerList:playerList});
       }
   });
 
-  games.on("initiateHand",function(data){
-    console.log(data);
-    for (var i =0;i<data.length;i++){
-    $("#hand").append("<div class='card'> <h3>"+data[i]+"</h3>  <input class='checkbox' type='checkbox'></div>");
-  }
-    $(".checkbox").click(function () {
-    console.log("cheked"); 
-    });
-  })
-
   games.on("updateClientList",function(data){
     roomlist.emit('updatePlayer',{roomNumber:roomNumber, playerList:data});
+    for(var i=0;i<data.length;i++){
+      console.log("<tr id='"+data[i].id+"'><td>"+data[i].player.name+"</td><td>"+data[i].player.team+"</td><td></td><td></td> </tr>");
+      $( "#playerInfo" ).after( "<tr id='"+data[i].id+"'><td>"+data[i].player.name+"</td><td>"+data[i].player.team+"</td><td></td><td></td> </tr>");
+    }
     localStorage.setItem("playerList", JSON.stringify(data));
-  })
-
+  });
 
   setInterval(function(){
     games.emit('updateList',{roomNumber:roomNumber});
   }, 5000);
 
+  games.on("initiateHand",function(data){
+    for (var i =0;i<data.length;i++){
+    $("#hand").append("<div class='card'> <h3>"+data[i]+"</h3>  <input class='checkbox' name='"+data[i]+"'type='checkbox'></div>");
+  }
+      $(".checkbox").change(function() {
+          getAllCheckedCard();
+      });
+  })
+
+  function getAllCheckedCard(){
+    var arr=$(':checked');
+    selectedCard=[];
+    for(var i=1;i<arr.length;i++){
+      selectedCard.push(arr[i].name);
+    }
+  }
+
+  $("#sendCards").click(function(){
+      games.emit('sendCards',{cards:selectedCard,id:JSON.parse(localStorage.getItem("id"))});
+      $(':checked').parent().remove();
+  });
 
 })
 </script>
