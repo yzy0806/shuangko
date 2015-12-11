@@ -8,6 +8,18 @@ module.exports=function(io,rooms,users){
 		}
 	}
 
+	Array.prototype.shuffle = function() {
+	  var i = this.length, j, temp;
+	  if ( i == 0 ) return this;
+	  while ( --i ) {
+	     j = Math.floor( Math.random() * ( i + 1 ) );
+	     temp = this[i];
+	     this[i] = this[j];
+	     this[j] = temp;
+	  }
+	  return this;
+	}
+
 	var gamerooms=io.of('/roomlist').on('connection',function(socket){
 		socket.emit('roomUpdate',JSON.stringify(rooms));
 		socket.on("newRoom", function(data){
@@ -52,19 +64,21 @@ module.exports=function(io,rooms,users){
 					cards.push(c2);
 				}
 			}
-			cards.push('16');
-			cards.push('16');
-			cards.push('17');
-			cards.push('17');
-			console.log(cards);
+			cards.push('16A');
+			cards.push('16B');
+			cards.push('17A');
+			cards.push('17B');
 
-			//cards=shuffle(cards);
+			cards.shuffle();
 			for (var i=0;i<4;i++){
-				var hand =cards.slice(i, (i+1)*27);
+				var hand =cards.slice(i*27, (i+1)*27);
 				hand = hand.sort(function (a, b) { 
     				return parseInt(a.slice(0, -1), 10)-parseInt(b.slice(0, -1), 10);
 				});
-				io.to(data[i].id).emit('initiateHand', hand);
+				if(i===3){
+				socket.emit('initiateHand', hand);
+				}
+				socket.broadcast.to(data.playerList[i].id).emit('initiateHand', hand);
 			}; 
 
 		})
