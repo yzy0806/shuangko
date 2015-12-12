@@ -22,7 +22,7 @@
   $("#addroom").click(function(){
     var roomName=$("#roomname").val();
     if(roomName!=''){
-      var roomNumber= parseInt(Math.random()*100000);
+      var roomNumber= parseInt(Math.random()*100000)+"";
       var playerList=[];
       socket.emit('newRoom',{roomName:roomName, roomNumber:roomNumber, playerList:playerList});
     }
@@ -32,7 +32,6 @@
     $("#roomList").html("");
     var procData=JSON.parse(data);
     for (var i =0;i<procData.length;i++){
-      console.log(procData[i])
       var str='<a href=room/'+procData[i].roomNumber +'><li>' +procData[i].roomName + procData[i].playerList.length+'</li></a>'
       $("#roomList").prepend(str);
     }

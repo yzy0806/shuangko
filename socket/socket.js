@@ -34,7 +34,6 @@ module.exports=function(io,rooms,users){
 			socket.broadcast.emit('roomUpdate',JSON.stringify(rooms));
 			socket.emit('roomUpdate',JSON.stringify(rooms));
 		})
-
 	})
 
 	var games = io.of('/games').on('connection',function(socket){
@@ -60,10 +59,10 @@ module.exports=function(io,rooms,users){
 			var clientList=[];
 			var index=room+"";
 			var roomMember=users[index];
-			for (var i in clients){
-				for (var k in roomMember){
-					if(clients[i]===roomMember[k].id){
-						clientList.push(roomMember[k]);
+			for (var i in roomMember){
+				for (var k in clients){
+					if(clients[k]===roomMember[i].id){
+						clientList.push(roomMember[i]);
 					}
 				}
 			}
@@ -78,6 +77,22 @@ module.exports=function(io,rooms,users){
 
 		socket.on('startGame',function(data){
 			//14 =A, 15=2, 16=smallJoker, 17=largeJoker
+			var team1=[];
+			var team2=[];
+			for (var i=0;i<users[data.roomNumber].length;i++){
+				if(users[data.roomNumber][i]["player"]["team"]==="team1"){
+					team1.push(users[data.roomNumber][i]);
+				}
+				else{
+					team2.push(users[data.roomNumber][i]);
+				}
+			}
+			var team=[];
+			team[0]=team1[0];
+			team[1]=team2[0];
+			team[2]=team1[1];
+			team[3]=team2[1];
+			users[data.roomNumber]=team;
 			var cards=[];
 			for(var i=3;i<16;i++){
 				for(var k=0;k<4;k++){
@@ -98,13 +113,22 @@ module.exports=function(io,rooms,users){
     				return parseInt(a.slice(0, -1), 10)-parseInt(b.slice(0, -1), 10);
 				});
 				if(i===3){
-				socket.emit('initiateHand', hand);
+					socket.emit('initiateHand', hand);
 				}
 				socket.broadcast.to(data.playerList[i].id).emit('initiateHand', hand);
-			} 
+			}
+		users[data.roomNumber]["counter"]=Math.floor((Math.random() * 4));
+		var id=users[data.roomNumber][users[data.roomNumber]["counter"]]["id"];
+		socket.to(data.roomNumber).emit('distributeCards',{cards:[],id:id});
+		socket.emit('distributeCards',{cards:[],id:id});
+
 		});
+
 	    socket.on("sendCards",function(data){
-	    	console.log(data);
+	    	users[data.roomNumber]["counter"]++;
+	    	var index=users[data.roomNumber]["counter"]%4
+	    	data.id=users[data.roomNumber][index];
+	    	io.to(data.roomNumber).emit('distributeCards',data);
 	    })
 	})
 }
