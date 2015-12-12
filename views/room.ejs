@@ -34,7 +34,6 @@
   <tbody>
   </tbody>
   </table>
-
   <div id="cardsontable" class="row">
   </div>
   <br>
@@ -47,8 +46,11 @@
 <script>
 $(function() {
   var id;
+  var myTurn=false;
   var selectedCard;
+  var emitCard;
   var cardsOnTable;
+  var currentCards;
   var host ="http://localhost:50000";
   var roomlist = io.connect(host+"/roomlist");
   var games = io.connect(host +"/games");
@@ -101,13 +103,108 @@ $(function() {
       }
   });
 
+  function checkLegalCard(){
+    if(selectedCard[0]===selectedCard[selectedCard.length-1]){
+      return true;
+    }
+    else{
+      if(selectedCard.length<5||selectedCard[selectedCard.length-1]-selectedCard[0]<2){
+        return false;
+      }
+      var diff=selectedCard[selectedCard.length-1]-selectedCard[0]+1;
+      if(selectedCard.length%diff!==0){
+        return false;
+      }
+      var rep=selectedCard.length/diff;
+      var arr=[];
+      for(var i=selectedCard[0];i<=selectedCard[selectedCard.length-1];i++){
+        for (var k=0;k<rep;k++){
+          arr.push(i);
+        }
+      }
+      for(var i=0;i<selectedCard.length;i++){
+        if(selectedCard[i]!==arr[i]){
+          return false;
+        }
+      }
+      return true;
+    }
+  };
+
+  function isBomb(array){
+    if(array.length<4){
+      return false;
+    }
+    else{
+      for(var i=0;i<array.length;i++){
+        if(array[i]!==array[0]){
+          return false;
+        }
+      }
+      return true;
+    }
+  }
+
+  function canSendCard(){
+    if(cardsOnTable.cardsOwner===id){
+      console.log("myTurn");
+      return checkLegalCard();
+    }
+    else if(checkLegalCard()){
+      if(isBomb(currentCards)){
+        if(!isBomb(selectedCard)){
+          return false;
+        }
+        else if(selectedCard.length<currentCards.length){
+          return false;
+        }
+        else if (selectedCard.length===currentCards.length){
+          if (selectedCard[0]>currentCards[0]){
+            return true;
+          }
+          else{
+            return false;
+          }
+        }
+        else{
+          return true;
+        }
+      }
+      else{
+        if(isBomb(selectedCard)){
+          return true;
+        }
+        else if(currentCards.length!==selectedCard.length){
+          return false;
+        }
+        else{
+          var diff=selectedCard[0]-currentCards[0];
+          if(diff<=0){
+            return false;
+          }
+          else{
+            for(var i=0;i<selectedCard.length;i++){
+              if (selectedCard[i]-currentCards[i]!==diff) {
+                return false;
+              }
+            }
+            return true;
+          }
+        }
+      }
+    }
+    else{
+      return false;
+    }
+  }
+
   games.on("initiateHand",function(data){
     for (var i =0;i<data.length;i++){
     $("#hand").append("<div class='card'> <h3>"+data[i]+"</h3>  <input class='checkbox' name='"+data[i]+"'type='checkbox'></div>");
     }
     $(".checkbox").change(function() {
           getAllCheckedCard();
-          if(checkLegalCard()){
+          if(canSendCard()&& myTurn){
               $("#sendCards").prop('disabled', false);
           }
           else{
@@ -119,28 +216,48 @@ $(function() {
   function getAllCheckedCard(){
     var arr=$(':checked');
     selectedCard=[];
+    emitCard=[];
     for(var i=1;i<arr.length;i++){
-      selectedCard.push(arr[i].name);
+      selectedCard.push(parseInt(arr[i].name.slice(0, -1)));
+      emitCard.push(arr[i].name);
     }
-  }
+    selectedCard.sort(function (a, b) { 
+      return a - b;
+    });
+  };
 
   $("#sendCards").click(function(){
-      games.emit('sendCards',{cards:selectedCard,id:JSON.parse(localStorage.getItem("id"))});
+      games.emit('sendCards',{cards:emitCard,id:id,cardsOwner:id,roomNumber:roomNumber});
       $(':checked').parent().remove();
       $("#sendCards").prop('disabled', true);
       $("#pass").prop('disabled', true);
+      myTurn=false;
+  });
+
+  $("#pass").click(function(){
+      games.emit('sendCards',{cards:cardsOnTable.cards,cardsOwner:cardsOnTable.cardsOwner, id:id,roomNumber:roomNumber});
+      $("#sendCards").prop('disabled', true);
+      $("#pass").prop('disabled', true);
+      myTurn=false;
   });
 
   games.on("distributeCards",function(data){
-    console.log("cardRCVD");
-    cardsOnTable=data.cards;
-    for (var i =0;i<cardsOnTable.length;i++){
-      $("#cardsontable").append("<div class='card'> <h3>"+cardsOnTable[i]+"</h3></div>");
-    };
+    cardsOnTable=data;
+    currentCards=[];
+    $("#cardsontable").html("");
+    for (var i =0;i<cardsOnTable.cards.length;i++){
+      currentCards.push(parseInt(cardsOnTable.cards[i].slice(0, -1)))
+      $("#cardsontable").append("<div class='card'> <h3>"+cardsOnTable.cards[i]+"</h3></div>");
+    }
+    currentCards.sort(function (a, b) { 
+      return a - b;
+    });
+
     if(data.id==id){
+      myTurn=true;
       $("#pass").prop('disabled', false);
     }
-  })
+  });
 
 })
 </script>

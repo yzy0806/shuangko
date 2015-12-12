@@ -44,11 +44,12 @@ module.exports=function(io,rooms,users){
 			user.player=data.player;
 			var index=data.roomNumber;
 			if(users[index]!==undefined){
-				users[index].push(user);
+				users[index]["players"].push(user);
 			}
 			else{
-				users[index]=[];
-				users[index].push(user);
+				users[index]={};
+				users[index]["players"]=[];
+				users[index]["players"].push(user);
 			}
 		});
 
@@ -58,7 +59,7 @@ module.exports=function(io,rooms,users){
 			clients=Object.getOwnPropertyNames(clients);
 			var clientList=[];
 			var index=room+"";
-			var roomMember=users[index];
+			var roomMember=users[index]["players"];
 			for (var i in roomMember){
 				for (var k in clients){
 					if(clients[k]===roomMember[i].id){
@@ -66,8 +67,9 @@ module.exports=function(io,rooms,users){
 					}
 				}
 			}
-			users[index]=clientList;
-			socket.emit('updateClientList',users[index]);
+			users[index]["players"]=clientList;
+			users[index]["counter"]=users[index]["counter"];
+			socket.emit('updateClientList',users[index]["players"]);
 			}
 		};
 
@@ -79,12 +81,12 @@ module.exports=function(io,rooms,users){
 			//14 =A, 15=2, 16=smallJoker, 17=largeJoker
 			var team1=[];
 			var team2=[];
-			for (var i=0;i<users[data.roomNumber].length;i++){
-				if(users[data.roomNumber][i]["player"]["team"]==="team1"){
-					team1.push(users[data.roomNumber][i]);
+			for (var i=0;i<users[data.roomNumber]["players"].length;i++){
+				if(users[data.roomNumber]["players"][i]["player"]["team"]==="team1"){
+					team1.push(users[data.roomNumber]["players"][i]);
 				}
 				else{
-					team2.push(users[data.roomNumber][i]);
+					team2.push(users[data.roomNumber]["players"][i]);
 				}
 			}
 			var team=[];
@@ -92,7 +94,7 @@ module.exports=function(io,rooms,users){
 			team[1]=team2[0];
 			team[2]=team1[1];
 			team[3]=team2[1];
-			users[data.roomNumber]=team;
+			users[data.roomNumber]["players"]=team;
 			var cards=[];
 			for(var i=3;i<16;i++){
 				for(var k=0;k<4;k++){
@@ -117,18 +119,21 @@ module.exports=function(io,rooms,users){
 				}
 				socket.broadcast.to(data.playerList[i].id).emit('initiateHand', hand);
 			}
-		users[data.roomNumber]["counter"]=Math.floor((Math.random() * 4));
-		var id=users[data.roomNumber][users[data.roomNumber]["counter"]]["id"];
-		socket.to(data.roomNumber).emit('distributeCards',{cards:[],id:id});
-		socket.emit('distributeCards',{cards:[],id:id});
+		var initialIndex=Math.floor((Math.random() * 4));
+		users[data.roomNumber]["counter"]=initialIndex;
+		var id=users[data.roomNumber]["players"][initialIndex]["id"];
+		socket.to(data.roomNumber).emit('distributeCards',{cards:[],id:id,cardsOwner:id});
+		socket.emit('distributeCards',{cards:[],id:id,cardsOwner:id});
 
 		});
 
 	    socket.on("sendCards",function(data){
 	    	users[data.roomNumber]["counter"]++;
 	    	var index=users[data.roomNumber]["counter"]%4
-	    	data.id=users[data.roomNumber][index];
-	    	io.to(data.roomNumber).emit('distributeCards',data);
+	    	data.id=users[data.roomNumber]["players"][index].id;
+	    	socket.to(data.roomNumber).emit('distributeCards',data);
+	    	socket.emit('distributeCards',data);
+
 	    })
 	})
 }
