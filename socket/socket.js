@@ -60,6 +60,7 @@ module.exports=function(io,rooms,users){
 			var clientList=[];
 			var index=room+"";
 			var roomMember=users[index]["players"];
+			console.log(roomMember);
 			for (var i in roomMember){
 				for (var k in clients){
 					if(clients[k]===roomMember[i].id){
@@ -105,9 +106,9 @@ module.exports=function(io,rooms,users){
 				}
 			}
 			cards.push('16A');
-			cards.push('16B');
+			cards.push('16A');
 			cards.push('17A');
-			cards.push('17B');
+			cards.push('17A');
 			cards.shuffle();
 			for (var i=0;i<4;i++){
 				var hand =cards.slice(i*27, (i+1)*27);
@@ -133,7 +134,6 @@ module.exports=function(io,rooms,users){
 	    	data.id=users[data.roomNumber]["players"][index].id;
 	    	socket.to(data.roomNumber).emit('distributeCards',data);
 	    	socket.emit('distributeCards',data);
-
 	    })
 	})
 }

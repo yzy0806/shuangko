@@ -105,14 +105,18 @@ $(function() {
 
   function checkLegalCard(){
     if(selectedCard[0]===selectedCard[selectedCard.length-1]){
+      console.log(1);
       return true;
     }
     else{
       if(selectedCard.length<5||selectedCard[selectedCard.length-1]-selectedCard[0]<2){
+        console.log(2);
         return false;
       }
+      console.log(selectedCard);
       var diff=selectedCard[selectedCard.length-1]-selectedCard[0]+1;
       if(selectedCard.length%diff!==0){
+        console.log(3);
         return false;
       }
       var rep=selectedCard.length/diff;
@@ -124,9 +128,11 @@ $(function() {
       }
       for(var i=0;i<selectedCard.length;i++){
         if(selectedCard[i]!==arr[i]){
+          console.log(4);
           return false;
         }
       }
+      console.log(5);
       return true;
     }
   };
@@ -153,54 +159,67 @@ $(function() {
     else if(checkLegalCard()){
       if(isBomb(currentCards)){
         if(!isBomb(selectedCard)){
+          console.log(6);
           return false;
         }
         else if(selectedCard.length<currentCards.length){
+          console.log(7);
           return false;
         }
         else if (selectedCard.length===currentCards.length){
           if (selectedCard[0]>currentCards[0]){
+            console.log(8);
             return true;
           }
           else{
+            console.log(9);
             return false;
           }
         }
         else{
+          console.log(10);
           return true;
         }
       }
       else{
         if(isBomb(selectedCard)){
+          console.log(11);
           return true;
         }
         else if(currentCards.length!==selectedCard.length){
+          console.log(12);
           return false;
         }
         else{
           var diff=selectedCard[0]-currentCards[0];
           if(diff<=0){
+            console.log(13);
             return false;
           }
           else{
             for(var i=0;i<selectedCard.length;i++){
               if (selectedCard[i]-currentCards[i]!==diff) {
+                console.log(14);
                 return false;
               }
             }
+            console.log(15);
             return true;
           }
         }
       }
     }
     else{
+      console.log(16);
       return false;
     }
   }
 
   games.on("initiateHand",function(data){
+    $("#team").remove();
+    $("#playerName").remove();
     for (var i =0;i<data.length;i++){
-    $("#hand").append("<div class='card'> <h3>"+data[i]+"</h3>  <input class='checkbox' name='"+data[i]+"'type='checkbox'></div>");
+    $("#hand").append("<div class='card'><img src='../photos/"+data[i]+".png' width='104px' height='150px'><input class='checkbox' name='"+data[i]+"'type='checkbox'></div>");
     }
     $(".checkbox").change(function() {
           getAllCheckedCard();
@@ -217,7 +236,7 @@ $(function() {
     var arr=$(':checked');
     selectedCard=[];
     emitCard=[];
-    for(var i=1;i<arr.length;i++){
+    for(var i=0;i<arr.length;i++){
       selectedCard.push(parseInt(arr[i].name.slice(0, -1)));
       emitCard.push(arr[i].name);
     }
@@ -247,7 +266,7 @@ $(function() {
     $("#cardsontable").html("");
     for (var i =0;i<cardsOnTable.cards.length;i++){
       currentCards.push(parseInt(cardsOnTable.cards[i].slice(0, -1)))
-      $("#cardsontable").append("<div class='card'> <h3>"+cardsOnTable.cards[i]+"</h3></div>");
+      $("#cardsontable").append("<div class='card'> <img src='../photos/"+cardsOnTable.cards[i]+".png' width='104px' height='150px'</div>");
     }
     currentCards.sort(function (a, b) { 
       return a - b;
