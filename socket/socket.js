@@ -107,6 +107,7 @@ var util = require('util');
 			team[2]=team1[1];
 			team[3]=team2[1];
 			users[data.roomNumber]["players"]=team;
+			UpdateUserList(data.roomNumber);
 			var cards=[];
 			for(var i=3;i<16;i++){
 				for(var k=0;k<4;k++){
@@ -120,7 +121,7 @@ var util = require('util');
 			cards.push('16A');
 			cards.push('17A');
 			cards.push('17A');
-			cards.shuffle();
+			//cards.shuffle();
 			for (var i=0;i<4;i++){
 				var hand =cards.slice(i*27, (i+1)*27);
 				hand = hand.sort(function (a, b) { 
@@ -136,13 +137,28 @@ var util = require('util');
 		var id=users[data.roomNumber]["players"][initialIndex]["id"];
 		socket.to(data.roomNumber).emit('distributeCards',{cards:[],id:id,cardsOwner:id});
 		socket.emit('distributeCards',{cards:[],id:id,cardsOwner:id});
+		});
 
+		socket.on("cardCount",function(data){
+			socket.to(data.roomNumber).emit('remainCards',data);
+	    	socket.emit('remainCards',data);
 		});
 
 	    socket.on("sendCards",function(data){
 	    	users[data.roomNumber]["counter"]++;
 	    	var index=users[data.roomNumber]["counter"]%4
 	    	data.id=users[data.roomNumber]["players"][index].id;
+	    	socket.to(data.roomNumber).emit('distributeCards',data);
+	    	socket.emit('distributeCards',data);
+	    });
+
+	    socket.on("skipPlayer",function(data){
+	    	users[data.roomNumber]["counter"]=users[data.roomNumber]["counter"]+2;
+	    	var index=users[data.roomNumber]["counter"]%4;
+	    	data.id=users[data.roomNumber]["players"][index].id;
+	    	data.cardsOwner=users[data.roomNumber]["players"][index].id;
+	    	data.cards=[];
+	    	console.log(data);
 	    	socket.to(data.roomNumber).emit('distributeCards',data);
 	    	socket.emit('distributeCards',data);
 	    })

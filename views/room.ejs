@@ -46,6 +46,7 @@
 <script>
 $(function() {
   var id;
+  var remainCardsCount;
   var myTurn=false;
   var selectedCard;
   var emitCard;
@@ -65,6 +66,7 @@ $(function() {
   })
 
   games.on('connect', function(data){
+        id =io().id;
         games.emit('connectRoom',{roomNumber:roomNumber});
   });
 
@@ -153,64 +155,53 @@ window.onbeforeunload = function(e) {
 
   function canSendCard(){
     if(cardsOnTable.cardsOwner===id){
-      console.log("myTurn");
+      console.log("suibianchu");
       return checkLegalCard();
     }
     else if(checkLegalCard()){
       if(isBomb(currentCards)){
         if(!isBomb(selectedCard)){
-          console.log(6);
           return false;
         }
         else if(selectedCard.length<currentCards.length){
-          console.log(7);
           return false;
         }
         else if (selectedCard.length===currentCards.length){
           if (selectedCard[0]>currentCards[0]){
-            console.log(8);
             return true;
           }
           else{
-            console.log(9);
             return false;
           }
         }
         else{
-          console.log(10);
           return true;
         }
       }
       else{
         if(isBomb(selectedCard)){
-          console.log(11);
           return true;
         }
         else if(currentCards.length!==selectedCard.length){
-          console.log(12);
           return false;
         }
         else{
           var diff=selectedCard[0]-currentCards[0];
           if(diff<=0){
-            console.log(13);
             return false;
           }
           else{
             for(var i=0;i<selectedCard.length;i++){
               if (selectedCard[i]-currentCards[i]!==diff) {
-                console.log(14);
                 return false;
               }
             }
-            console.log(15);
             return true;
           }
         }
       }
     }
     else{
-      console.log(16);
       return false;
     }
   }
@@ -218,6 +209,7 @@ window.onbeforeunload = function(e) {
   games.on("initiateHand",function(data){
     $("#team").remove();
     $("#playerName").remove();
+    $("#hand").html("");
     for (var i =0;i<data.length;i++){
     $("#hand").append("<div class='card'><img src='../photos/"+data[i]+".png' width='104px' height='150px'><input class='checkbox' name='"+data[i]+"'type='checkbox'></div>");
     }
@@ -253,6 +245,9 @@ window.onbeforeunload = function(e) {
       $("#sendCards").prop('disabled', true);
       $("#pass").prop('disabled', true);
       myTurn=false;
+      games.emit('cardCount',{cardsCount:emitCard.length,id:id,roomNumber:roomNumber});
+      remainCardsCount=$("#hand .card").length;
+      console.log(remainCardsCount);
   });
 
   $("#pass").click(function(){
@@ -273,11 +268,29 @@ window.onbeforeunload = function(e) {
     currentCards.sort(function (a, b) { 
       return a - b;
     });
-
     if(data.id==id){
+      console.log(remainCardsCount);
+      console.log(data.cardsOwner);
+      console.log(id);
+      if(remainCardsCount===0 && data.cardsOwner===id){
+        games.emit("skipPlayer",{id:id,roomNumber:roomNumber})
+      }
+      else if (remainCardsCount===0){
+        games.emit('sendCards',{cards:cardsOnTable.cards,cardsOwner:cardsOnTable.cardsOwner, id:id,roomNumber:roomNumber});
+        $("#sendCards").prop('disabled', true);
+        $("#pass").prop('disabled', true);
+        myTurn=false;
+      }
+      else{
       myTurn=true;
       $("#pass").prop('disabled', false);
+      }
     }
+  });
+
+  games.on("remainCards",function(data){
+    var currentCount=parseInt($('#'+data.id+' td:nth-child(3)').html());
+    $('#'+data.id+' td:nth-child(3)').html(currentCount-parseInt(data.cardsCount));
   });
 
 })
