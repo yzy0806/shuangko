@@ -1,4 +1,5 @@
 module.exports=function(io,rooms,users){
+var util = require('util');
 
 	function findRoom(roomId){
 	for(var i=0;i<rooms.length;i++){
@@ -37,8 +38,13 @@ module.exports=function(io,rooms,users){
 	})
 
 	var games = io.of('/games').on('connection',function(socket){
-		socket.on('joinRoom',function(data){
+
+		socket.on('connectRoom',function(data){
 			socket.join(data.roomNumber);
+			UpdateUserList(data.roomNumber);
+		});
+
+		socket.on('joinRoom',function(data){
 			var user={};
 			user.id=socket.id;
 			user.player=data.player;
@@ -51,16 +57,24 @@ module.exports=function(io,rooms,users){
 				users[index]["players"]=[];
 				users[index]["players"].push(user);
 			}
+			UpdateUserList(data.roomNumber);
+		});
+
+
+
+		socket.on("leaveGame",function(data){
+			console.log("leave");
+			socket.leave(data.roomNumber);
+			UpdateUserList(data.roomNumber);
 		});
 
 		function UpdateUserList(room){
+			var index=room+"";
 			var clients =io.nsps['/games'].adapter.rooms[room];
-			if(clients!==undefined){
+			if(clients!==undefined &&users[index]!==undefined){
 			clients=Object.getOwnPropertyNames(clients);
 			var clientList=[];
-			var index=room+"";
 			var roomMember=users[index]["players"];
-			console.log(roomMember);
 			for (var i in roomMember){
 				for (var k in clients){
 					if(clients[k]===roomMember[i].id){
@@ -71,12 +85,9 @@ module.exports=function(io,rooms,users){
 			users[index]["players"]=clientList;
 			users[index]["counter"]=users[index]["counter"];
 			socket.emit('updateClientList',users[index]["players"]);
+			socket.to(room).emit('updateClientList',users[index]["players"]);
 			}
 		};
-
-		socket.on('updateList',function(data){
-			UpdateUserList(data.roomNumber);
-		});
 
 		socket.on('startGame',function(data){
 			//14 =A, 15=2, 16=smallJoker, 17=largeJoker
