@@ -1,7 +1,7 @@
 <!doctype html>
 <html>
   <head>
-    <title>Leaderboard</title>
+    <title>Shuang Ko</title>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
 <script src="https://cdn.socket.io/socket.io-1.3.7.js"></script>
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
@@ -9,26 +9,15 @@
   </head>
   <body>
   <div class="container">
-  <h1>Leaderboard</h1>
-	<body>
-
-	  <table>
-  <thead>
-    <tr id="playerInfo">
-     <th>Rank</th>
-    <th>Player Name</th>
-    <th>Score</th>
-    </tr>
-  </thead>
-  <tbody>
-  		<% for(var i=0; i<obj.length; i++) {%>
-  		<tr>
-   		<td><%=i+1%></td>
-   		<td><%=obj[i].name%> </td>
-   		<td><%=obj[i].score%> </td>
-   		</tr>
-		<% } %>
-  </tbody>
-  </table>
-	</body>
+  <h1>Welcome to Shuang Ko</h1>
+  <h5><a href="http://finalproject-leoying.rhcloud.com/leaderboardAll">Leaderboard</a></h5>
+  <input id="roomname" type="text" class="form-control" placeholder="Room Name" aria-describedby="basic-addon1">
+  <button id="addroom"type="button" class="btn btn-primary">Add Room</button>
+  <ul id="roomList">
+  </ul>
   </div>
+
+<script src="../javascripts/index.js"></script>
+
+  </body>
+</html>

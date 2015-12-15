@@ -38,7 +38,6 @@ var util = require('util');
 	})
 
 	var games = io.of('/games').on('connection',function(socket){
-
 		socket.on('connectRoom',function(data){
 			socket.join(data.roomNumber);
 			UpdateUserList(data.roomNumber);
@@ -63,7 +62,6 @@ var util = require('util');
 
 
 		socket.on("leaveGame",function(data){
-			console.log("leave");
 			socket.leave(data.roomNumber);
 			UpdateUserList(data.roomNumber);
 		});
@@ -101,6 +99,8 @@ var util = require('util');
 					team2.push(users[data.roomNumber]["players"][i]);
 				}
 			}
+			socket.to(data.roomNumber).emit('teams',{team1:team1,team2:team2});
+			socket.emit('teams',{team1:team1,team2:team2});
 			var team=[];
 			team[0]=team1[0];
 			team[1]=team2[0];
@@ -121,7 +121,7 @@ var util = require('util');
 			cards.push('16A');
 			cards.push('17A');
 			cards.push('17A');
-			//cards.shuffle();
+			cards.shuffle();
 			for (var i=0;i<4;i++){
 				var hand =cards.slice(i*27, (i+1)*27);
 				hand = hand.sort(function (a, b) { 
@@ -158,9 +158,23 @@ var util = require('util');
 	    	data.id=users[data.roomNumber]["players"][index].id;
 	    	data.cardsOwner=users[data.roomNumber]["players"][index].id;
 	    	data.cards=[];
-	    	console.log(data);
 	    	socket.to(data.roomNumber).emit('distributeCards',data);
 	    	socket.emit('distributeCards',data);
-	    })
+	    });
+
+	    socket.on("cardsFinished",function(data){
+	    	socket.to(data.roomNumber).emit('addRank',data);
+	    	socket.emit('addRank',data);
+	    });
+
+	    socket.on("updateWinner",function(data){
+	    	socket.to(data.roomNumber).emit('teamWinner',data);
+	    	socket.emit('teamWinner',data);
+	    });
+
+	    socket.on("gameover",function(data){
+	    	socket.to(data.roomNumber).emit('restart',data);
+	    	socket.emit('restart',data);
+	    });
 	})
 }

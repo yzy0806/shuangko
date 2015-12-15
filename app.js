@@ -60,7 +60,10 @@ require('./socket/socket.js')(io,rooms,users);
  * (e.g. when you are testing the application on your laptop) then
  * use default values of localhost (127.0.0.1) and 50000 (arbitrary).
  */
-var ipaddress = process.env.OPENSHIFT_NODEJS_IP || "127.0.0.1";
-var port      = process.env.OPENSHIFT_NODEJS_PORT || 50000;
 
-httpServer.listen(port, ipaddress, function() {console.log('Listening on '+ipaddress+':'+port);});
+var server_port = process.env.OPENSHIFT_NODEJS_PORT || 8080
+var server_ip_address = process.env.OPENSHIFT_NODEJS_IP || '127.0.0.1'
+
+httpServer.listen(server_port, server_ip_address, function(){
+  console.log("Listening on " + server_ip_address + ", server_port " + server_port)
+});

@@ -1,7 +1,7 @@
 <!doctype html>
 <html>
   <head>
-    <title>Socket.IO chat</title>
+    <title>Shuang KO</title>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
 <script src="https://cdn.socket.io/socket.io-1.3.7.js"></script>
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
@@ -10,7 +10,7 @@
 
   </head>
   <body>
-  <h3>A ROOM</h3>
+  <h3>Game Room</h3>
 
   <input id="playerName" type="text" class="form-control" placeholder="Add a Player Name " aria-describedby="basic-addon1">
 
@@ -22,40 +22,55 @@
   <button id="addPlayer"type="button" class="btn btn-primary">Add Player</button>
   <button id="startGame"type="button" class="btn btn-primary">StartGame</button>
 
+<div class="row">
+<div class="col-md-8">
   <table>
   <thead>
     <tr id="playerInfo">
     <th>PlayerName</th>
     <th>Teams</th>
     <th>Remaining Cards</th>
-    <th>Current</th>
     </tr>
   </thead>
   <tbody>
   </tbody>
   </table>
+  </div>
+  <div class="col-md-4">
+  <h2 id="rank" style="display:none">Winners</h2>
+
+  <ol>
+  </ol>  
+
+  </div>
+  </div>
   <div id="cardsontable" class="row">
   </div>
   <br>
   <br>
-  <div id="hand" class="row">
-  </div>
   <button id="sendCards"type="button" class="btn btn-primary" disabled="disabled">Send Cards</button>
   <button id="pass"type="button" class="btn btn-primary" disabled="disabled">Pass</button>
+  <div id="hand" class="row">
+  </div>
+  <p id="team1" style="display:none"></p>
+  <p id="team2" style="display:none"></p>
+
 
 <script>
 $(function() {
   var id;
+  var teamNumber;
+  var playerName;
   var remainCardsCount;
   var myTurn=false;
   var selectedCard;
   var emitCard;
   var cardsOnTable;
   var currentCards;
-  var host ="http://localhost:50000";
+  var team;
+  var host ="http://finalproject-leoying.rhcloud.com:8000";
   var roomlist = io.connect(host+"/roomlist");
   var games = io.connect(host +"/games");
-  var generalSocket = io.connect();
   roomlist.on("playerUpdate",function(data){
     $("#roomList").html("");
     var procData=JSON.parse(data);
@@ -66,7 +81,7 @@ $(function() {
   })
 
   games.on('connect', function(data){
-        id =io().id;
+        id =games.id;
         games.emit('connectRoom',{roomNumber:roomNumber});
   });
 
@@ -74,8 +89,8 @@ $(function() {
   var roomNumber=room.roomNumber;
 
   $("#addPlayer").click(function(){
-    var playerName=$("#playerName").val();
-    var teamNumber = $('#team').find(":selected").val();
+    playerName=$("#playerName").val();
+    teamNumber = $('#team').find(":selected").val();
     var player={};
     player.name=playerName;
     player.team=teamNumber;
@@ -83,13 +98,26 @@ $(function() {
       games.emit('joinRoom', {roomNumber:roomNumber, player:player});
       $("#playerName").val('');
     }
+
+    $.ajax({
+      type : "PUT",
+      url : "http://finalproject-leoying.rhcloud.com/leaderboard",
+      dataType : "text",
+      data : "name="+playerName+"&score=0",
+      success : function() {
+        console.log("player created in DB");
+      },
+      error : function(error) {
+        console.log(error);
+      }
+    });
   });
 
   games.on("updateClientList",function(data){
     roomlist.emit('updatePlayer',{roomNumber:roomNumber, playerList:data});
     $("tbody").html("");
     for(var i=0;i<data.length;i++){
-      $( "tbody" ).append( "<tr id='"+data[i].id+"'><td>"+data[i].player.name+"</td><td>"+data[i].player.team+"</td><td></td><td></td> </tr>");
+      $( "tbody" ).append( "<tr id='"+data[i].id+"'><td>"+data[i].player.name+"</td><td>"+data[i].player.team+"</td><td></td></tr>");
     }
     localStorage.setItem("playerList", JSON.stringify(data));
   });
@@ -107,18 +135,14 @@ window.onbeforeunload = function(e) {
 
   function checkLegalCard(){
     if(selectedCard[0]===selectedCard[selectedCard.length-1]){
-      console.log(1);
       return true;
     }
     else{
       if(selectedCard.length<5||selectedCard[selectedCard.length-1]-selectedCard[0]<2){
-        console.log(2);
         return false;
       }
-      console.log(selectedCard);
       var diff=selectedCard[selectedCard.length-1]-selectedCard[0]+1;
       if(selectedCard.length%diff!==0){
-        console.log(3);
         return false;
       }
       var rep=selectedCard.length/diff;
@@ -130,11 +154,9 @@ window.onbeforeunload = function(e) {
       }
       for(var i=0;i<selectedCard.length;i++){
         if(selectedCard[i]!==arr[i]){
-          console.log(4);
           return false;
         }
       }
-      console.log(5);
       return true;
     }
   };
@@ -155,7 +177,6 @@ window.onbeforeunload = function(e) {
 
   function canSendCard(){
     if(cardsOnTable.cardsOwner===id){
-      console.log("suibianchu");
       return checkLegalCard();
     }
     else if(checkLegalCard()){
@@ -224,6 +245,10 @@ window.onbeforeunload = function(e) {
             $("#sendCards").prop('disabled', true);
           }
       });
+  });
+
+  games.on("teams",function(data){
+    team=data[teamNumber];
   })
 
   function getAllCheckedCard(){
@@ -239,7 +264,49 @@ window.onbeforeunload = function(e) {
     });
   };
 
+  function updateLeaderBoard(){
+    var names=[];
+    names.push(team[0]["player"]["name"]);
+    names.push(team[1]["player"]["name"]);
+    var scores=[];
+    var add=3-$("ol li").length;
+    for(var i=0;i<2;i++){
+      $.ajax({
+      type : "GET",
+      url : "http://finalproject-leoying.rhcloud.com/leaderboard",
+      dataType : "text",
+      data : "name="+names[i],
+      success : function(data) {
+        console.log(data);
+        data=JSON.parse(data);
+        scores.push(parseInt(data[0]["score"]));
+        console.log(scores);
+        for(var i=0;i<2;i++){
+        var newScore=scores[i]+add;
+        $.ajax({
+        type : "POST",
+        url : "http://finalproject-leoying.rhcloud.com/leaderboard",
+        dataType : "text",
+        data : 'find={"name":"'+names[i]+'"}&update={"$set":{"score":"'+newScore+'"}}',
+        success : function(data) {
+          console.log(data);
+          //scores.push(data.score);
+        },
+        error : function(error) {
+          console.log(error);
+        }
+        });
+        }
+      },
+      error : function(error) {
+        console.log(error);
+      }
+    });
+    }
+  }
+
   $("#sendCards").click(function(){
+      $("tr").removeClass("current");
       games.emit('sendCards',{cards:emitCard,id:id,cardsOwner:id,roomNumber:roomNumber});
       $(':checked').parent().remove();
       $("#sendCards").prop('disabled', true);
@@ -247,7 +314,19 @@ window.onbeforeunload = function(e) {
       myTurn=false;
       games.emit('cardCount',{cardsCount:emitCard.length,id:id,roomNumber:roomNumber});
       remainCardsCount=$("#hand .card").length;
-      console.log(remainCardsCount);
+      if(remainCardsCount===0){
+        games.emit("cardsFinished",{roomNumber:roomNumber,playerName:playerName});
+        updateLeaderBoard();
+        var memberwinner=$("#"+teamNumber).html().length;
+        console.log(memberwinner);
+        if(memberwinner===0){
+          games.emit('updateWinner',{roomNumber:roomNumber,teamNumber:teamNumber});
+        }
+        else{
+          console.log("gameover event sent");
+          games.emit('gameover',{roomNumber:roomNumber,teamNumber:teamNumber});
+        }
+      }
   });
 
   $("#pass").click(function(){
@@ -258,6 +337,8 @@ window.onbeforeunload = function(e) {
   });
 
   games.on("distributeCards",function(data){
+    $("tr").removeClass("current");
+    $("#"+data.id).addClass("current");
     cardsOnTable=data;
     currentCards=[];
     $("#cardsontable").html("");
@@ -269,9 +350,6 @@ window.onbeforeunload = function(e) {
       return a - b;
     });
     if(data.id==id){
-      console.log(remainCardsCount);
-      console.log(data.cardsOwner);
-      console.log(id);
       if(remainCardsCount===0 && data.cardsOwner===id){
         games.emit("skipPlayer",{id:id,roomNumber:roomNumber})
       }
@@ -292,6 +370,28 @@ window.onbeforeunload = function(e) {
     var currentCount=parseInt($('#'+data.id+' td:nth-child(3)').html());
     $('#'+data.id+' td:nth-child(3)').html(currentCount-parseInt(data.cardsCount));
   });
+
+  games.on("addRank",function(data){
+    $("#rank").show();
+    $("ol").append("<li>"+data.playerName+"</li>");
+  });
+
+  games.on("teamWinner",function(data){
+    $("#"+data.teamNumber).html("a");
+  });
+
+  games.on("restart",function(data){
+      console.log("restart");
+      var remainCardsCount=undefined;
+      var myTurn=false;
+      var selectedCard=undefined;
+      var emitCard=undefined;
+      var cardsOnTable=undefined;
+      var currentCards=undefined;
+      $("#hand").html("");
+      $("tbody tr td:nth-child(3)").html("27");
+      alert(data.teamNumber+ "wins !");
+  })
 
 })
 </script>

@@ -1,7 +1,7 @@
 {
-  "name": "mongoDB-demo",
+  "name": "LeoYingFinalProject",
   "version": "1.0.0",
-  "description": "Example app doing CRUD with MongoDB",
+  "description": "A Chinese poker card game called shuangko",
   "keywords": [
     "OpenShift",
     "Node.js",

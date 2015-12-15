@@ -53,7 +53,6 @@ doCreate = function(req, res){
   mongoModel.create ( "leaderboard", 
 	                    req.body,
 		                  function(result) {
-                        console.log(result);
 		                    // result equal to true means create was successful
   		                  var success = (result ? "Create successful" : "Create unsuccessful");
 	  	                  res.render('message', {title: 'Mongo Demo', obj: success});
@@ -78,13 +77,13 @@ doRetrieve = function(req, res){
    *    model once the retrieve has been successful.
    * modelData is an array of objects returned as a result of the Retrieve
    */
-
   mongoModel.retrieve(
     "leaderboard", 
     req.query,
 		function(modelData) {
 		  if (modelData.length) {
-        res.render('results',{title: 'Mongo Demo', obj: modelData});
+        res.json(modelData);
+        //res.render('results',{title: 'Mongo Demo', obj: modelData});
       } else {
         var message = "No documents with "+JSON.stringify(req.query)+ 
                       " in collection  leaderboard"+ "found.";
@@ -100,7 +99,7 @@ doGetAllPlayers = function(req, res){
     "leaderboard", 
     function(modelData) {
       if (modelData.length) {
-        res.render('results',{title: 'Mongo Demo', obj: modelData});
+        res.render('results',{title: 'Leaderboard', obj: modelData});
       } else {
         var message = "No documents with "+JSON.stringify(req.query)+ 
                       " in collection  leaderboard"+ "found.";

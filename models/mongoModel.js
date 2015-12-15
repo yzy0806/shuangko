@@ -8,7 +8,7 @@ var mongoClient = require('mongodb').MongoClient;
  * This connection_string is for mongodb running locally.
  * Change nameOfMyDb to reflect the name you want for your database
  */
-var connection_string = 'localhost:27017/leaderboard';
+var connection_string = '$OPENSHIFT_MONGODB_DB_HOST:$OPENSHIFT_MONGODB_DB_PORT/';
 /*
  * If OPENSHIFT env variables have values, then this app must be running on 
  * OPENSHIFT.  Therefore use the connection info in the OPENSHIFT environment
@@ -80,9 +80,9 @@ exports.retrieve = function(collection, query, callback) {
    * iteration does the actual retrieve. toArray asynchronously retrieves the
    * whole result set and returns an array.
    */
-
   mongoDB.collection(collection).find(query).toArray(function(err, docs) {
     if (err) doError(err);
+    console.log("docs"+JSON.stringify(docs));
     // docs are MongoDB documents, returned as an array of JavaScript objects
     // Use the callback provided by the controller to send back the docs.
     callback(docs);

@@ -6,7 +6,7 @@ exports.init = function(app,roomList) {
 }
 // No path:  display instructions for use
 index = function(req, res) {
-  res.render('help');
+  res.render('index');
 };
 
 room=function(req, res, next){
