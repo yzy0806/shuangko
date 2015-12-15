@@ -58,6 +58,7 @@
 
 <script>
 $(function() {
+  //initiate variables 
   var id;
   var teamNumber;
   var playerName;
@@ -68,9 +69,12 @@ $(function() {
   var cardsOnTable;
   var currentCards;
   var team;
+  //connect to the socket server 
   var host ="http://finalproject-leoying.rhcloud.com:8000";
   var roomlist = io.connect(host+"/roomlist");
   var games = io.connect(host +"/games");
+
+  //Update the user list upon an event from server.
   roomlist.on("playerUpdate",function(data){
     $("#roomList").html("");
     var procData=JSON.parse(data);
@@ -80,6 +84,7 @@ $(function() {
     }
   })
 
+  //connect to the room
   games.on('connect', function(data){
         id =games.id;
         games.emit('connectRoom',{roomNumber:roomNumber});
@@ -88,6 +93,7 @@ $(function() {
   var room =<%-JSON.stringify(room)%>
   var roomNumber=room.roomNumber;
 
+  //add player to the room.
   $("#addPlayer").click(function(){
     playerName=$("#playerName").val();
     teamNumber = $('#team').find(":selected").val();
@@ -99,6 +105,7 @@ $(function() {
       $("#playerName").val('');
     }
 
+    //create the user to the database.
     $.ajax({
       type : "PUT",
       url : "http://finalproject-leoying.rhcloud.com/leaderboard",
@@ -113,6 +120,7 @@ $(function() {
     });
   });
 
+  //update the players list upon event from server. 
   games.on("updateClientList",function(data){
     roomlist.emit('updatePlayer',{roomNumber:roomNumber, playerList:data});
     $("tbody").html("");
@@ -122,10 +130,12 @@ $(function() {
     localStorage.setItem("playerList", JSON.stringify(data));
   });
 
+//emit an event server for disconnection 
 window.onbeforeunload = function(e) {
   games.emit('leaveGame',{roomNumber:roomNumber});
 };
 
+//start the game. 
   $("#startGame").click(function(){
     var playerList= JSON.parse(localStorage.getItem("playerList"));
     if(playerList.length==4){
@@ -133,6 +143,7 @@ window.onbeforeunload = function(e) {
       }
   });
 
+//check if the selected card is a legal hand 
   function checkLegalCard(){
     if(selectedCard[0]===selectedCard[selectedCard.length-1]){
       return true;
@@ -161,6 +172,7 @@ window.onbeforeunload = function(e) {
     }
   };
 
+//helper function if it is a bomb.
   function isBomb(array){
     if(array.length<4){
       return false;
@@ -175,6 +187,7 @@ window.onbeforeunload = function(e) {
     }
   }
 
+//check if the current select hand is leagl based on the cards on the table.
   function canSendCard(){
     if(cardsOnTable.cardsOwner===id){
       return checkLegalCard();
@@ -227,6 +240,7 @@ window.onbeforeunload = function(e) {
     }
   }
 
+  //initiate the hand of cards of players. 
   games.on("initiateHand",function(data){
     $("#team").remove();
     $("#playerName").remove();
@@ -235,7 +249,7 @@ window.onbeforeunload = function(e) {
     $("#hand").append("<div class='card'><img src='../photos/"+data[i]+".png' width='104px' height='150px'><input class='checkbox' name='"+data[i]+"'type='checkbox'></div>");
     }
     $("tbody tr td:nth-child(3)").html("27");
-
+    //register the checkbox events. 
     $(".checkbox").change(function() {
           getAllCheckedCard();
           if(canSendCard()&& myTurn){
@@ -251,6 +265,7 @@ window.onbeforeunload = function(e) {
     team=data[teamNumber];
   })
 
+// helper function put all the selected cards into array 
   function getAllCheckedCard(){
     var arr=$(':checked');
     selectedCard=[];
@@ -264,6 +279,7 @@ window.onbeforeunload = function(e) {
     });
   };
 
+//update the leaderboard when a team wins.
   function updateLeaderBoard(){
     var names=[];
     names.push(team[0]["player"]["name"]);
@@ -305,6 +321,8 @@ window.onbeforeunload = function(e) {
     }
   }
 
+//send the cards to other players and handle the event 
+//when all the cards are used. 
   $("#sendCards").click(function(){
       $("tr").removeClass("current");
       games.emit('sendCards',{cards:emitCard,id:id,cardsOwner:id,roomNumber:roomNumber});
@@ -329,6 +347,7 @@ window.onbeforeunload = function(e) {
       }
   });
 
+  //skip the current player. 
   $("#pass").click(function(){
       games.emit('sendCards',{cards:cardsOnTable.cards,cardsOwner:cardsOnTable.cardsOwner, id:id,roomNumber:roomNumber});
       $("#sendCards").prop('disabled', true);
@@ -336,12 +355,14 @@ window.onbeforeunload = function(e) {
       myTurn=false;
   });
 
+//handle the event of reciving cards from other users
   games.on("distributeCards",function(data){
     $("tr").removeClass("current");
     $("#"+data.id).addClass("current");
     cardsOnTable=data;
     currentCards=[];
     $("#cardsontable").html("");
+    //update crads on table.
     for (var i =0;i<cardsOnTable.cards.length;i++){
       currentCards.push(parseInt(cardsOnTable.cards[i].slice(0, -1)))
       $("#cardsontable").append("<div class='card'> <img src='../photos/"+cardsOnTable.cards[i]+".png' width='104px' height='150px'</div>");
@@ -353,6 +374,7 @@ window.onbeforeunload = function(e) {
       if(remainCardsCount===0 && data.cardsOwner===id){
         games.emit("skipPlayer",{id:id,roomNumber:roomNumber})
       }
+      //handle the user already win
       else if (remainCardsCount===0){
         games.emit('sendCards',{cards:cardsOnTable.cards,cardsOwner:cardsOnTable.cardsOwner, id:id,roomNumber:roomNumber});
         $("#sendCards").prop('disabled', true);
@@ -365,12 +387,14 @@ window.onbeforeunload = function(e) {
       }
     }
   });
-
+  
+  //update the remain card number 
   games.on("remainCards",function(data){
     var currentCount=parseInt($('#'+data.id+' td:nth-child(3)').html());
     $('#'+data.id+' td:nth-child(3)').html(currentCount-parseInt(data.cardsCount));
   });
 
+//update winnders
   games.on("addRank",function(data){
     $("#rank").show();
     $("ol").append("<li>"+data.playerName+"</li>");
@@ -380,6 +404,7 @@ window.onbeforeunload = function(e) {
     $("#"+data.teamNumber).html("a");
   });
 
+//start a new game upon the finish.
   games.on("restart",function(data){
       console.log("restart");
       var remainCardsCount=undefined;
